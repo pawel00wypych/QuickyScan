@@ -2,4 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="toolbar">#249cc7</color>
+    <color name="saveButton">#099646</color>
+    <color name="cancelButton">#a30a11</color>
 </resources>
