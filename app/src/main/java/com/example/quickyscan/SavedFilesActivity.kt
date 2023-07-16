@@ -3,23 +3,19 @@ package com.example.quickyscan
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.View
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.PopupMenu
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
-
-class MainActivity : AppCompatActivity() {
-
+class SavedFilesActivity : AppCompatActivity()  {
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.files_layout)
 
-
-        val showMenu: ImageButton = findViewById(R.id.show_menu)
-
-        showMenu.setOnClickListener {
+        var menuButton: ImageButton = findViewById(R.id.show_menu)
+        menuButton.setOnClickListener{
             val popupMenu = PopupMenu(this, it)
 
             popupMenu.menuInflater.inflate(R.menu.drop_menu, popupMenu.menu)
@@ -34,8 +30,6 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     R.id.files -> {
-                        val intent = Intent(this, SavedFilesActivity::class.java)
-                        startActivity(intent)
                         true
                     }
                     else -> false
@@ -50,7 +44,7 @@ class MainActivity : AppCompatActivity() {
                     .getDeclaredMethod("setForceShowIcon", Boolean::class.java)
                     .invoke(mPopup, true)
             } catch (e: Exception){
-                Log.e("Main", "Error showing menu icons.", e)
+                Log.e("Files Activity", "Error showing menu icons.", e)
             } finally {
                 popupMenu.show()
             }
