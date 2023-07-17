@@ -3,10 +3,9 @@ package com.example.quickyscan
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.View
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.PopupMenu
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 
@@ -18,6 +17,11 @@ class MainActivity : AppCompatActivity() {
 
 
         val showMenu: ImageButton = findViewById(R.id.show_menu)
+        val scan: Button = findViewById(R.id.scan_button)
+        scan.setOnClickListener {
+            val intent = Intent(this, CameraActivity::class.java)
+            startActivity(intent)
+        }
 
         showMenu.setOnClickListener {
             val popupMenu = PopupMenu(this, it)
