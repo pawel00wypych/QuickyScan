@@ -13,25 +13,24 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.Manifest
 import android.content.ContentValues
+import android.content.Context
+import android.database.Cursor
+import android.net.Uri
 import android.provider.MediaStore
 
-import androidx.core.app.ActivityCompat
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.core.Preview
 import androidx.camera.core.CameraSelector
 import android.util.Log
-import androidx.camera.core.ImageAnalysis
+import android.widget.TextView
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.core.content.PermissionChecker
-import java.nio.ByteBuffer
+import java.io.File
+import java.io.IOException
+import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Locale
-
-
-typealias LumaListener = (luma: Double) -> Unit
 
 class CameraActivity : AppCompatActivity() {
 
@@ -47,8 +46,8 @@ class CameraActivity : AppCompatActivity() {
         viewBinding = CameraLayoutBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
-        var cancelButton: Button = findViewById(R.id.cnclButton)
-        var saveButton: Button = findViewById(R.id.svButton)
+        val cancelButton: Button = findViewById(R.id.cnclButton)
+        val saveButton: Button = findViewById(R.id.svButton)
 
         cancelButton.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
@@ -151,20 +150,78 @@ class CameraActivity : AppCompatActivity() {
             outputOptions,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
+
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
 
-                override fun
-                        onImageSaved(output: ImageCapture.OutputFileResults){
-                    val msg = "Photo capture succeeded: ${output.savedUri}"
-                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, msg)
+                override fun onImageSaved(output: ImageCapture.OutputFileResults){
+                    val savedUri = output.savedUri
+                    if (savedUri != null) {
+                        val imagePath = getFilePathFromContentUri(this@CameraActivity, savedUri) ?: ""
+                        val msg = "Photo capture succeeded: $savedUri"
+                        Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+                        Log.d(TAG, msg)
+                        performOCR(imagePath)
+                    } else {
+                        Log.e(TAG, "Saved URI is null")
+                    }
                 }
             }
         )
     }
 
+    fun getFilePathFromContentUri(context: Context, contentUri: Uri): String? {
+        var filePath: String? = null
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor: Cursor? = context.contentResolver.query(contentUri, projection, null, null, null)
+        if (cursor != null) {
+            val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+            if (cursor.moveToFirst()) {
+                filePath = cursor.getString(columnIndex)
+            }
+            cursor.close()
+        }
+        return filePath
+    }
+    private fun performOCR(imagePath: String) {
+        val language = "pol"
+
+        // You can implement the OCR processing code here (see previous examples)
+        // For simplicity, let's assume you have an OCRProcessor class that handles OCR
+
+        val textViewResult: TextView = findViewById(R.id.textViewResult)
+
+        val ocrProcessor = OCRProcessor(this, assets, imagePath, language)
+
+        ocrProcessor.extractText { extractedText ->
+
+            textViewResult.text = extractedText
+            saveTextToFile(extractedText)
+        }
+    }
+    private fun saveTextToFile(text: String) {
+        try {
+            val outputFile = File(
+                externalMediaDirs.first(),
+                "extracted_text.txt"
+            )
+            outputFile.createNewFile()
+
+            val outputStreamWriter = OutputStreamWriter(outputFile.outputStream())
+            outputStreamWriter.append(text)
+            outputStreamWriter.close()
+
+            // Show a Toast to indicate that the text has been saved
+            Toast.makeText(
+                this,
+                "Text saved to ${outputFile.absolutePath}",
+                Toast.LENGTH_LONG
+            ).show()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
 
     private fun requestPermissions() {
         activityResultLauncher.launch(REQUIRED_PERMISSIONS)
