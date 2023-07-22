@@ -13,8 +13,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.Manifest
 import android.content.ContentValues
-import android.content.Context
-import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 
@@ -24,7 +22,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.core.Preview
 import androidx.camera.core.CameraSelector
 import android.util.Log
+import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.ImageCaptureException
 import java.io.File
 import java.io.IOException
@@ -39,6 +39,8 @@ class CameraActivity : AppCompatActivity() {
     private var imageCapture: ImageCapture? = null
 
     private lateinit var cameraExecutor: ExecutorService
+
+    private lateinit var ocrProcessor: OCRProcessor
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -126,22 +128,23 @@ class CameraActivity : AppCompatActivity() {
         // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
 
+        // Get existing file names
+        val existingFileNames = getExistingFileNames()
+
         // Create time stamped name and MediaStore entry.
         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
             .format(System.currentTimeMillis())
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
                 put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
             }
         }
 
         // Create output options object which contains file + metadata
         val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues)
+            .Builder(contentResolver, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
             .build()
 
         // Set up image capture listener, which is triggered after photo has
@@ -150,19 +153,21 @@ class CameraActivity : AppCompatActivity() {
             outputOptions,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
-
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
 
-                override fun onImageSaved(output: ImageCapture.OutputFileResults){
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = output.savedUri
                     if (savedUri != null) {
-                        val imagePath = getFilePathFromContentUri(this@CameraActivity, savedUri) ?: ""
                         val msg = "Photo capture succeeded: $savedUri"
                         Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                         Log.d(TAG, msg)
-                        performOCR(imagePath)
+
+                        val language = "pol"
+                        ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
+
+                        showFileNameDialog(existingFileNames)
                     } else {
                         Log.e(TAG, "Saved URI is null")
                     }
@@ -171,40 +176,49 @@ class CameraActivity : AppCompatActivity() {
         )
     }
 
-    fun getFilePathFromContentUri(context: Context, contentUri: Uri): String? {
-        var filePath: String? = null
-        val projection = arrayOf(MediaStore.Images.Media.DATA)
-        val cursor: Cursor? = context.contentResolver.query(contentUri, projection, null, null, null)
-        if (cursor != null) {
-            val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-            if (cursor.moveToFirst()) {
-                filePath = cursor.getString(columnIndex)
+    private fun getExistingFileNames(): List<String> {
+        // Get a list of existing file names from the directory where the extracted text files are saved
+        val directory = externalMediaDirs.first()
+        val fileList = directory.listFiles()
+        return fileList?.filter { it.isFile }?.map { it.nameWithoutExtension } ?: emptyList()
+    }
+
+    private fun showFileNameDialog(existingFileNames: List<String>) {
+        val inputEditText = EditText(this)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Enter File Name")
+            .setView(inputEditText)
+            .setPositiveButton("Save") { _, _ ->
+                val fileName = inputEditText.text.toString().trim()
+                if (fileName.isNotEmpty()) {
+                    if (existingFileNames.contains(fileName)) {
+                        Toast.makeText(this, "File name already exists. Please provide a different name.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        ocrProcessor.extractText { extractedText ->
+                            saveTextToFile(fileName, extractedText)
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "File name cannot be empty", Toast.LENGTH_SHORT).show()
+                }
             }
-            cursor.close()
-        }
-        return filePath
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
     }
-    private fun performOCR(imagePath: String) {
-        val language = "pol"
 
-        // You can implement the OCR processing code here (see previous examples)
-        // For simplicity, let's assume you have an OCRProcessor class that handles OCR
+    private fun performOCR(imagePath: Uri, existingFileNames: List<String>) {
 
-        val textViewResult: TextView = findViewById(R.id.textViewResult)
-
-        val ocrProcessor = OCRProcessor(this, assets, imagePath, language)
-
-        ocrProcessor.extractText { extractedText ->
-
-            textViewResult.text = extractedText
-            saveTextToFile(extractedText)
-        }
+        showFileNameDialog(existingFileNames)
     }
-    private fun saveTextToFile(text: String) {
+
+    private fun saveTextToFile(fileName: String, text: String) {
         try {
             val outputFile = File(
                 externalMediaDirs.first(),
-                "extracted_text.txt"
+                "$fileName.txt"
             )
             outputFile.createNewFile()
 
@@ -246,6 +260,7 @@ class CameraActivity : AppCompatActivity() {
             ).apply {
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
                 }
             }.toTypedArray()
     }
