@@ -13,11 +13,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.Manifest
 import android.content.ContentValues
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.media.ExifInterface
-import android.net.Uri
 import android.provider.MediaStore
 
 import android.widget.Toast
@@ -168,7 +163,7 @@ class CameraActivity : AppCompatActivity() {
                         Log.d(TAG, msg)
 
                         val language = "pol"
-                        ocrProcessor = OCRProcessor(this@CameraActivity, savedUri, language)
+                        ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
 
 
                         showFileNameDialog(existingFileNames)
@@ -215,9 +210,7 @@ class CameraActivity : AppCompatActivity() {
 
     private fun saveTextToFile(fileName: String, text: String) {
         try {
-            Log.d(ContentValues.TAG, "externalMediaDirs.first(): ${externalMediaDirs.first()}")
-            Log.d(ContentValues.TAG, "externalMediaDirs: $externalMediaDirs")
-            val path = applicationContext.filesDir
+            val path = externalMediaDirs.first()
             Log.d(ContentValues.TAG, "path: $path")
 
             val outputFile = File(
