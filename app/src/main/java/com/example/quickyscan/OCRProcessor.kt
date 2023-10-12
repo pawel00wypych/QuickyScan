@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import com.googlecode.tesseract.android.TessBaseAPI
 import java.io.File
@@ -18,15 +17,10 @@ class OCRProcessor(private val context: Context, private val assetManager: Asset
     fun extractText(onResult: (String) -> Unit) {
         Log.d(TAG, "imageUri: $imageUri")
         val tessBaseApi = TessBaseAPI()
-        val dataPath = context.filesDir.path
-        val path = MediaStore.Files.getContentUri("pol.traineddata")
-        val path2 = getDataPath("pol")
-        Log.d(TAG, "dataPath: $dataPath")
+        val path = getDataPath(language)
         Log.d(TAG, "path: $path")
-        Log.d(TAG, "path: $path2")
 
-
-        tessBaseApi.init(path2, language)
+        tessBaseApi.init(path, language)
         val bitmap = BitmapFactory.decodeStream(context.contentResolver.openInputStream(imageUri))
         Log.d(TAG, "bitmap: $bitmap")
 

@@ -162,7 +162,7 @@ class CameraActivity : AppCompatActivity() {
                         Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                         Log.d(TAG, msg)
 
-                        val language = "pol"
+                        val language = "eng"
                         ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
 
 
