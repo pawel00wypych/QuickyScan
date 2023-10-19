@@ -14,7 +14,7 @@ import java.io.IOException
 
 class OCRProcessor(private val context: Context, private val assetManager: AssetManager, private val imageUri: Uri, private val language: String) {
 
-    fun extractText(onResult: (String) -> Unit) {
+    fun extractText(): String {
         Log.d(TAG, "imageUri: $imageUri")
         val tessBaseApi = TessBaseAPI()
         val path = getDataPath(language)
@@ -31,7 +31,7 @@ class OCRProcessor(private val context: Context, private val assetManager: Asset
         tessBaseApi.end()
         Log.d(TAG, "extractedText: $extractedText")
 
-        onResult(extractedText)
+        return extractedText
     }
 
     private fun getDataPath(language: String): String {

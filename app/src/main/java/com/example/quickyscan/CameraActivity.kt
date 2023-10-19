@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.Manifest
 import android.content.ContentValues
+import android.net.Uri
 import android.provider.MediaStore
 
 import android.widget.Toast
@@ -24,13 +25,19 @@ import android.util.Log
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.ImageCaptureException
+import androidx.core.net.toUri
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class CameraActivity : AppCompatActivity() {
+class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private lateinit var viewBinding: CameraLayoutBinding
 
@@ -161,7 +168,7 @@ class CameraActivity : AppCompatActivity() {
                         val msg = "Photo capture succeeded: $savedUri"
                         Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                         Log.d(TAG, msg)
-
+                       // val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"));
                         val language = "eng"
                         ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
 
@@ -194,8 +201,8 @@ class CameraActivity : AppCompatActivity() {
                     if (existingFileNames.contains(fileName)) {
                         Toast.makeText(this, "File name already exists. Please provide a different name.", Toast.LENGTH_SHORT).show()
                     } else {
-                        ocrProcessor.extractText { extractedText ->
-                            saveTextToFile(fileName, extractedText)
+                        launch {
+                            ocrCall(fileName)
                         }
                     }
                 } else {
@@ -208,7 +215,19 @@ class CameraActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun saveTextToFile(fileName: String, text: String) {
+    private suspend fun ocrCall(fileName: String) {
+        Log.d("OCR", "czekamy")
+        val ret = withContext(Dispatchers.Default) {
+            val ret = ocrProcessor.extractText()
+            return@withContext ret
+        }
+        withContext(Dispatchers.Main) {
+            Log.d("OCR", "poszło")
+            saveTextToFile(fileName, ret)
+        }
+    }
+
+    fun saveTextToFile(fileName: String, text: String) {
         try {
             val path = externalMediaDirs.first()
             Log.d(ContentValues.TAG, "path: $path")
