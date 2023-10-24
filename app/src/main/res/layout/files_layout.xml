@@ -49,7 +49,7 @@
 
 
     <Button
-        android:id="@+id/button4"
+        android:id="@+id/export_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="@string/export"
@@ -61,7 +61,7 @@
         />
 
     <Button
-        android:id="@+id/button5"
+        android:id="@+id/delete_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="@string/delete"

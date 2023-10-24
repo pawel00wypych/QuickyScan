@@ -1,8 +1,10 @@
 package com.example.quickyscan
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.PopupMenu
 import androidx.appcompat.app.AppCompatActivity
@@ -10,13 +12,31 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.File
 
+
 class SavedFilesActivity : AppCompatActivity()  {
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.files_layout)
 
+        val deleteButton: Button = findViewById(R.id.delete_button)
+
+
+        val exportButton: Button = findViewById(R.id.export_button)
         val menuButton: ImageButton = findViewById(R.id.show_menu)
+        var recyclerView: RecyclerView = findViewById(R.id.rvSavedFiles)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        var filesAdapter = FilesAdapter(getListOfFiles())
+        recyclerView.adapter = filesAdapter
+
+        deleteButton.setOnClickListener {
+            deleteChosenFiles(filesAdapter)
+            val intent = Intent(this, SavedFilesActivity::class.java)
+            startActivity(intent)
+        }
+
+
         menuButton.setOnClickListener{
             val popupMenu = PopupMenu(this, it)
 
@@ -52,36 +72,59 @@ class SavedFilesActivity : AppCompatActivity()  {
             }
         }
 
-        var recyclerView: RecyclerView = findViewById(R.id.rvSavedFiles)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        var filesAdapter = FilesAdapter(getListOfFiles())
 
-        recyclerView.adapter = filesAdapter
     }
 
     private fun getListOfFiles(): List<FileData> {
-        val path = "/storage/self/primary/Android/media/com.example.quickyscan"
-        val files = mutableListOf<FileData>()
 
-        val directory = File(path)
 
-        if (directory.exists() && directory.isDirectory) {
-            val fileList = directory.listFiles()
+        val filesToReturn = mutableListOf<FileData>()
 
-            if (fileList != null) {
-                val listOfFiles = fileList.filter { it.isFile }.toList()
+        if (externalMediaDirs.isNotEmpty()) {
+            val mediaDir = externalMediaDirs[0]
 
-                for (file in listOfFiles) {
-                    println(file.name)
-                    files.add(FileData(file.name))
+            val files = mediaDir.listFiles()
+
+            if (files != null) {
+                for (file in files) {
+                    if (file.isFile) {
+                        filesToReturn.add(FileData(file.name, filePath = file.path.toString()))
+                    }else {
+                        Log.d("file: ","is not a file")
+                    }
                 }
-            } else {
-                Log.d("getListOfFiles:","Failed to list files in the directory.")
+            }else {
+                Log.d("file list: ","null")
             }
-        } else {
-            Log.d("getListOfFiles path:","The specified path is not a valid directory.")
         }
 
-        return files
+        return filesToReturn
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun deleteChosenFiles(filesAdapter: FilesAdapter) {
+
+        val selectedFiles = filesAdapter.getSelectedFiles()
+
+        if (selectedFiles.isNotEmpty()) {
+
+            for (fileData in selectedFiles) {
+
+                val fileToDelete = File(fileData.filePath)
+                if (fileToDelete.exists() && fileToDelete.isFile) {
+                    if (fileToDelete.delete()) {
+                        Log.d("file deleted","success")
+                    } else {
+                        Log.d("file deleted","error")
+
+                    }
+                }
+            }
+
+            filesAdapter.notifyDataSetChanged()
+
+        } else {
+            Log.d("selected files"," empty")
+        }
     }
 }

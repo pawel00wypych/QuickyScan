@@ -30,5 +30,9 @@ class FilesAdapter(private val fileList: List<FileData>) : RecyclerView.Adapter<
         }
     }
 
+    fun getSelectedFiles(): List<FileData> {
+        return fileList.filter { it.selected }
+    }
+
     override fun getItemCount() = fileList.size
 }
