@@ -1,17 +1,24 @@
 package com.example.quickyscan
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.PopupMenu
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.File
-
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.io.FileOutputStream
 
 class SavedFilesActivity : AppCompatActivity()  {
 
@@ -19,16 +26,71 @@ class SavedFilesActivity : AppCompatActivity()  {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.files_layout)
+        
+        if (allPermissionsGranted()) {
+            editFiles()
+        } else {
+            requestPermissions()
+        }
 
+    }
+
+    private fun requestPermissions() {
+        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
+    }
+
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(
+            baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private val activityResultLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions())
+        { permissions ->
+            // Handle Permission granted/rejected
+            var permissionGranted = true
+            permissions.entries.forEach {
+                if (it.key in REQUIRED_PERMISSIONS && !it.value)
+                    permissionGranted = false
+            }
+            if (!permissionGranted) {
+                Toast.makeText(baseContext,
+                    "Permission request denied",
+                    Toast.LENGTH_SHORT).show()
+            } else {
+                editFiles()
+            }
+        }
+
+    companion object {
+        private val REQUIRED_PERMISSIONS =
+            mutableListOf (
+                Manifest.permission.CAMERA
+            ).apply {
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
+            }.toTypedArray()
+    }
+
+    private fun editFiles() {
+        
+        val recyclerView: RecyclerView = findViewById(R.id.rvSavedFiles)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        val filesAdapter = FilesAdapter(getListOfFiles())
+        recyclerView.adapter = filesAdapter
+        
         val deleteButton: Button = findViewById(R.id.delete_button)
-
-
         val exportButton: Button = findViewById(R.id.export_button)
         val menuButton: ImageButton = findViewById(R.id.show_menu)
-        var recyclerView: RecyclerView = findViewById(R.id.rvSavedFiles)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        var filesAdapter = FilesAdapter(getListOfFiles())
-        recyclerView.adapter = filesAdapter
+        
+        exportButton.setOnClickListener {
+            exportChosenFiles(filesAdapter)
+            val intent = Intent(this, SavedFilesActivity::class.java)
+            startActivity(intent)
+        }
 
         deleteButton.setOnClickListener {
             deleteChosenFiles(filesAdapter)
@@ -71,8 +133,45 @@ class SavedFilesActivity : AppCompatActivity()  {
                 popupMenu.show()
             }
         }
+    }
 
+    @SuppressLint("NotifyDataSetChanged")
+    private fun exportChosenFiles(filesAdapter: FilesAdapter) {
+        val selectedFiles = filesAdapter.getSelectedFiles()
+        val workbook = XSSFWorkbook()
 
+        if (selectedFiles.isNotEmpty()) {
+            for (fileData in selectedFiles) {
+
+                val fileToExport = File(fileData.filePath)
+                if (fileToExport.exists() && fileToExport.isFile) {
+                    val sheet = workbook.createSheet(fileToExport.name + "_sheet")
+                    val text = fileToExport.readText()
+                    val rows = text.lines()
+
+                    for ((rowIndex, line) in rows.withIndex()) {
+                        val row = sheet.createRow(rowIndex)
+
+                        val cells = line.split("\t") // Split by tab, adjust as needed
+
+                        for ((cellIndex, cellValue) in cells.withIndex()) {
+                            val cell = row.createCell(cellIndex)
+                            cell.setCellValue(cellValue)
+                        }
+                    }
+                    Log.d("fileToExport.path: ", fileToExport.path)
+                    val outputFile = File(fileToExport.path.removeSuffix(".txt")+".xlsx")
+                    FileOutputStream(outputFile).use { outputStream ->
+                        workbook.write(outputStream)
+                    }
+                }
+            }
+
+            filesAdapter.notifyDataSetChanged()
+
+        } else {
+            Log.d("selected files"," empty")
+        }
     }
 
     private fun getListOfFiles(): List<FileData> {
