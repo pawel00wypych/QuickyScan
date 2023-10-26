@@ -1,31 +1,26 @@
 package com.example.quickyscan
 
+import android.Manifest
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.ImageCapture
-import androidx.core.content.ContextCompat
-import com.example.quickyscan.databinding.CameraLayoutBinding
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import android.Manifest
-import android.content.ContentValues
-import android.net.Uri
 import android.provider.MediaStore
-
+import android.util.Log
+import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.Preview
-import androidx.camera.core.CameraSelector
-import android.util.Log
-import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.core.net.toUri
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
+import com.example.quickyscan.databinding.CameraLayoutBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -36,6 +31,8 @@ import java.io.IOException
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -227,7 +224,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    fun saveTextToFile(fileName: String, text: String) {
+    suspend fun saveTextToFile(fileName: String, text: String) {
         try {
             val path = externalMediaDirs.first()
             Log.d(ContentValues.TAG, "path: $path")
@@ -236,12 +233,15 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 path,
                 "$fileName.txt"
             )
-            outputFile.createNewFile()
 
-            val outputStreamWriter = OutputStreamWriter(outputFile.outputStream())
-            outputStreamWriter.append(text)
-            outputStreamWriter.close()
+            withContext(Dispatchers.IO) {
 
+                outputFile.createNewFile()
+
+                val outputStreamWriter = OutputStreamWriter(outputFile.outputStream())
+                outputStreamWriter.append(text)
+                outputStreamWriter.close()
+            }
             // Show a Toast to indicate that the text has been saved
             Toast.makeText(
                 this,
