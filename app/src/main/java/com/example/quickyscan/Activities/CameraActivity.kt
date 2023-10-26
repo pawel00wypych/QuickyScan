@@ -1,4 +1,4 @@
-package com.example.quickyscan
+package com.example.quickyscan.Activities
 
 import android.Manifest
 import android.content.ContentValues
@@ -21,6 +21,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.example.quickyscan.services.OCRProcessor
+import com.example.quickyscan.R
 import com.example.quickyscan.databinding.CameraLayoutBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,11 +40,8 @@ import java.util.concurrent.Executors
 class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private lateinit var viewBinding: CameraLayoutBinding
-
     private var imageCapture: ImageCapture? = null
-
     private lateinit var cameraExecutor: ExecutorService
-
     private lateinit var ocrProcessor: OCRProcessor
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,7 +58,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             startActivity(intent)
         }
 
-
         // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera()
@@ -67,10 +65,9 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             requestPermissions()
         }
 
-        // Set up the listeners for take photo and video capture buttons
+        // Set up the listeners for take photo button
         saveButton.setOnClickListener { takePhoto() }
         cameraExecutor = Executors.newSingleThreadExecutor()
-
     }
 
     private val activityResultLauncher =
@@ -114,8 +111,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 cameraProvider.unbindAll()
 
                 // Bind use cases to camera
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture)
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
 
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -124,14 +120,11 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }, ContextCompat.getMainExecutor(this))
 
         imageCapture = ImageCapture.Builder().build()
-
     }
 
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
-
-        // Get existing file names
         val existingFileNames = getExistingFileNames()
 
         // Create time stamped name and MediaStore entry.
@@ -166,11 +159,10 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                         val msg = "Photo capture succeeded: $savedUri"
                         Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                         Log.d(TAG, msg)
+
                         val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"))
                         val language = "eng"
                         ocrProcessor = OCRProcessor(this@CameraActivity, assets, testPath, language)
-
-
                         showFileNameDialog(existingFileNames)
                     } else {
                         Log.e(TAG, "Saved URI is null")
@@ -214,13 +206,13 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private suspend fun ocrCall(fileName: String) {
-        Log.d("OCR", "czekamy")
+        Log.d("OCR", "extracting text..")
         val ret = withContext(Dispatchers.Default) {
             val ret = ocrProcessor.extractText()
             return@withContext ret
         }
         withContext(Dispatchers.Main) {
-            Log.d("OCR", "poszło")
+            Log.d("OCR", "text has been extracted.")
             saveTextToFile(fileName, ret)
         }
     }

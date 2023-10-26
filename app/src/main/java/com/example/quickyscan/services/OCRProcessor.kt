@@ -1,4 +1,4 @@
-package com.example.quickyscan
+package com.example.quickyscan.services
 
 import android.content.ContentValues.TAG
 import android.content.Context
@@ -15,22 +15,16 @@ import java.io.IOException
 class OCRProcessor(private val context: Context, private val assetManager: AssetManager, private val imageUri: Uri, private val language: String) {
 
     fun extractText(): String {
-        Log.d(TAG, "imageUri: $imageUri")
         val tessBaseApi = TessBaseAPI()
         val path = getDataPath(language)
-        Log.d(TAG, "path: $path")
 
         tessBaseApi.init(path, language)
         val bitmap = BitmapFactory.decodeStream(context.contentResolver.openInputStream(imageUri))
-        Log.d(TAG, "bitmap: $bitmap")
-
         tessBaseApi.setImage(bitmap)
-
         val extractedText = tessBaseApi.utF8Text
-
         tessBaseApi.end()
-        Log.d(TAG, "extractedText: $extractedText")
 
+        Log.d(TAG, "extractedText: $extractedText")
         return extractedText
     }
 

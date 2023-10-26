@@ -1,4 +1,4 @@
-package com.example.quickyscan
+package com.example.quickyscan.Activities
 
 import android.content.Intent
 import android.os.Bundle
@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.PopupMenu
 import androidx.appcompat.app.AppCompatActivity
+import com.example.quickyscan.R
 
 
 class MainActivity : AppCompatActivity() {

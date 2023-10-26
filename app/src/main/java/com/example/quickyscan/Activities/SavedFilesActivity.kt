@@ -1,4 +1,4 @@
-package com.example.quickyscan
+package com.example.quickyscan.Activities
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -16,6 +16,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.quickyscan.FileData
+import com.example.quickyscan.services.FilesAdapter
+import com.example.quickyscan.R
 import java.io.File
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.FileOutputStream

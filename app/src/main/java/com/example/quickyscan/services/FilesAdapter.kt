@@ -1,4 +1,4 @@
-package com.example.quickyscan
+package com.example.quickyscan.services
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,6 +6,8 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.quickyscan.FileData
+import com.example.quickyscan.R
 
 class FilesAdapter(private val fileList: List<FileData>) : RecyclerView.Adapter<FilesAdapter.FileViewHolder>() {
 
