@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -165,9 +166,9 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                         val msg = "Photo capture succeeded: $savedUri"
                         Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                         Log.d(TAG, msg)
-                       // val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"));
+                        val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"))
                         val language = "eng"
-                        ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
+                        ocrProcessor = OCRProcessor(this@CameraActivity, assets, testPath, language)
 
 
                         showFileNameDialog(existingFileNames)
@@ -273,12 +274,9 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
-                Manifest.permission.CAMERA
-            ).apply {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                }
-            }.toTypedArray()
+                Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ).toTypedArray()
     }
 }
