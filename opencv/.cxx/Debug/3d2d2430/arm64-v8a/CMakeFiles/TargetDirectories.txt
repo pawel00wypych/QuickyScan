@@ -1,0 +1,3 @@
+E:/STUDIA/QuickyScan/opencv/.cxx/Debug/3d2d2430/arm64-v8a/CMakeFiles/opencv_jni_shared.dir
+E:/STUDIA/QuickyScan/opencv/.cxx/Debug/3d2d2430/arm64-v8a/CMakeFiles/edit_cache.dir
+E:/STUDIA/QuickyScan/opencv/.cxx/Debug/3d2d2430/arm64-v8a/CMakeFiles/rebuild_cache.dir

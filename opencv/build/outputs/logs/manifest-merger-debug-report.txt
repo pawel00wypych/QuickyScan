@@ -1,0 +1,25 @@
+-- Merging decision tree log ---
+manifest
+ADDED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml:2:1-3:12
+INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml:2:1-3:12
+INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml:2:1-3:12
+	package
+		INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+		ADDED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml:2:1-3:12
+		INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+	xmlns:android
+		ADDED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml:2:11-69
+uses-sdk
+INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+		ADDED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+		INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+		ADDED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml
+		INJECTED from E:\STUDIA\QuickyScan\opencv\java\AndroidManifest.xml

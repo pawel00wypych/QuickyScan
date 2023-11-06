@@ -1,0 +1,2 @@
+ninja: Entering directory `E:\STUDIA\QuickyScan\opencv\.cxx\Debug\3d2d2430\x86'
+ninja: no work to do.
