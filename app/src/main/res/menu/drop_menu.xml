@@ -9,5 +9,4 @@
     <item android:id="@+id/files"
         android:icon="@drawable/ic_files"
         android:title="Saved Files" />
-
 </menu>

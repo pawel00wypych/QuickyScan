@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "E:\\STUDIA\\QuickyScan\\opencv\\libcxx_helper\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "E:\\AndroidStudio\\ASjdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "E:\\STUDIA\\QuickyScan\\opencv\\.cxx\\Debug\\3d2d2430\\armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "E:\\AndroidStudio\\ASjdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "E:\\STUDIA\\QuickyScan\\opencv\\.cxx\\Debug\\3d2d2430\\armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "opencv_jni_shared::@6890427a1f51a3e7e1df": {
+      "artifactName": "opencv_jni_shared",
+      "abi": "armeabi-v7a",
+      "output": "E:\\STUDIA\\QuickyScan\\opencv\\.cxx\\Debug\\3d2d2430\\armeabi-v7a\\libopencv_jni_shared.a",
+      "runtimeFiles": []
+    }
+  }
+}

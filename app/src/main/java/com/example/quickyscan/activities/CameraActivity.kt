@@ -21,6 +21,11 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LiveData
+import androidx.room.Room
+import com.example.quickyscan.DatabaseApp
+import com.example.quickyscan.FileEntity
+import com.example.quickyscan.SQLiteHelper
 import com.example.quickyscan.services.OCRProcessor
 import com.example.quickyscan.databinding.CameraLayoutBinding
 import kotlinx.coroutines.CoroutineScope
@@ -36,11 +41,9 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
-import kotlin.math.abs
 
 class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -48,6 +51,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var ocrProcessor: OCRProcessor
+    private lateinit var sqliteHelper: SQLiteHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -310,6 +314,8 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         } catch (e: IOException) {
             e.printStackTrace()
         }
+
+
     }
 
     private fun requestPermissions() {
