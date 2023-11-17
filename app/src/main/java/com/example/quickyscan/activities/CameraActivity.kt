@@ -21,29 +21,24 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LiveData
-import androidx.room.Room
-import com.example.quickyscan.DatabaseApp
-import com.example.quickyscan.FileEntity
-import com.example.quickyscan.SQLiteHelper
+import com.example.quickyscan.FileModel
 import com.example.quickyscan.services.OCRProcessor
+import com.example.quickyscan.R
 import com.example.quickyscan.databinding.CameraLayoutBinding
+import com.example.quickyscan.services.SQLiteHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.opencv.android.OpenCVLoader
 import java.io.File
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import org.opencv.core.Mat
-import org.opencv.imgcodecs.Imgcodecs
-import org.opencv.imgproc.Imgproc
 
 class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -58,11 +53,12 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         super.onCreate(savedInstanceState)
         viewBinding = CameraLayoutBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
+        sqliteHelper = SQLiteHelper(applicationContext)
 
 
-        val cancelButton: Button = findViewById(viewBinding.cnclButton.id)
-        val saveButton: Button = findViewById(viewBinding.svButton.id)
-        OpenCVLoader.initDebug()
+        val cancelButton: Button = findViewById(R.id.cnclButton)
+        val saveButton: Button = findViewById(R.id.svButton)
+
         cancelButton.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
@@ -172,35 +168,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
                         val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"))
                         val language = "eng"
-                        Log.d("savedUri.toString()", savedUri.toString())
-
-                        val path = "/storage/self/primary/Pictures/CameraX-Image/$name.jpg"
-                        Log.d("path ", path)
-
-                        val inputImage = Imgcodecs.imread(path)
-
-                        val rotationAngle = getRotationAngle(inputImage)
-                        if (rotationAngle != null) {
-                            Log.d("Rotation Angle:"," ${rotationAngle} degrees")
-                        } else {
-                            Log.e("ERROR","Failed to load or process the image.")
-                        }
-
-//                        Core.transpose(inputImage, inputImage)
-//                        Core.flip(inputImage, inputImage, Core.ROTATE_90_CLOCKWISE)
-//
-//                        savedUri.path?.let { Log.d("savedUri.path:", it) }
-//                        Log.d("inputImage", inputImage.toString())
-//                        Imgcodecs.imwrite(path, inputImage)
-//
-//                        val rotationAngle2 = getRotationAngle(inputImage)
-//                        if (rotationAngle2 != null) {
-//                            Log.d("Rotation Angle:"," ${rotationAngle2} degrees")
-//                        } else {
-//                            Log.e("ERROR","Failed to load or process the image.")
-//                        }
-
-
                         ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
                         showFileNameDialog(existingFileNames)
                     } else {
@@ -210,36 +177,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             }
         )
     }
-
-    fun getRotationAngle(image: Mat): Double? {
-        if (image.empty()) {
-            return null
-        }
-
-        val gray = Mat()
-        Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY)
-
-        val edges = Mat()
-        Imgproc.Canny(gray, edges, 50.0, 150.0)
-
-        val lines = Mat()
-        Imgproc.HoughLines(edges, lines, 1.0, Math.PI / 180, 200)
-
-        var angleSum = 0.0
-        val linesArray = DoubleArray(lines.rows())
-
-        for (i in 0 until lines.rows()) {
-            val rhoTheta = lines.get(i, 0)
-            val theta = rhoTheta[1]
-            val angle = Math.toDegrees(theta)
-            angleSum += angle
-            linesArray[i] = angle
-        }
-
-        val averageAngle = angleSum / linesArray.size
-        return if (linesArray.isNotEmpty()) averageAngle else null
-    }
-
 
     private fun getExistingFileNames(): List<String> {
         // Get a list of existing file names from the directory where the extracted text files are saved
@@ -286,7 +223,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private suspend fun saveTextToFile(fileName: String, text: String) {
+    suspend fun saveTextToFile(fileName: String, text: String) {
         try {
             val path = externalMediaDirs.first()
             Log.d(ContentValues.TAG, "path: $path")
@@ -311,11 +248,17 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 Toast.LENGTH_LONG
             ).show()
             Log.d(ContentValues.TAG, "Text saved to: ${outputFile.absolutePath}")
+
+            val fileModel = FileModel(
+                fileName = "$fileName.txt",
+                path = outputFile.absolutePath,
+                selected = false,
+                creationDate = LocalDate.now().toString()
+            )
+            sqliteHelper.insertFile(fileModel)
         } catch (e: IOException) {
             e.printStackTrace()
         }
-
-
     }
 
     private fun requestPermissions() {

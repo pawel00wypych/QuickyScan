@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -13,15 +15,15 @@ import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.quickyscan.FileData
 import com.example.quickyscan.FileModel
 import com.example.quickyscan.services.FilesAdapter
 import com.example.quickyscan.R
-import com.example.quickyscan.SQLiteHelper
+import com.example.quickyscan.services.SQLiteHelper
 import java.io.File
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.FileOutputStream
@@ -42,7 +44,7 @@ class SavedFilesActivity : AppCompatActivity()  {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.files_layout)
-        sqliteHelper = SQLiteHelper(this)
+        sqliteHelper = SQLiteHelper(applicationContext)
 
         if (allPermissionsGranted()) {
             editFiles()
@@ -95,36 +97,40 @@ class SavedFilesActivity : AppCompatActivity()  {
     private fun editFiles() {
 
         initView()
-        initRecyclerView()
+        initRecyclerView(getListOfFilesFromDB())
 
         exportButton.setOnClickListener {
             filesAdapter?.let { it1 -> exportChosenFiles(it1) }
-            initRecyclerView()
+            initRecyclerView(getListOfFilesFromDB())
         }
 
         deleteButton.setOnClickListener {
-            filesAdapter?.let { it1 -> deleteChosenFiles(it1) }
-            initRecyclerView()
 
+            val dialog = AlertDialog.Builder(this)
+                .setTitle("Are you sure you want to delete files?")
+                .setPositiveButton("Yes") { _, _ ->
+                    filesAdapter?.let { it1 -> deleteChosenFiles(it1) }
+                    initRecyclerView(getListOfFilesFromDB())
+                }
+                .setNegativeButton("No", null)
+                .create()
 
-//            val builder = AlertDialog.Builder(this)
-//            builder.setMessage("Are you sure you want to delete files?")
-//            builder.setCancelable(true)
-//            builder.setPositiveButton("Yes"){ dialog, _ ->
-//                filesAdapter?.let { it1 -> deleteChosenFiles(it1) }
-//                initRecyclerView()
-//                dialog.dismiss()
-//            }
-//            builder.setNegativeButton("No"){ dialog, _ ->
-//                initRecyclerView()
-//                dialog.dismiss()
-//            }
-//            initRecyclerView()
+            dialog.show()
         }
 
+
         findButton.setOnClickListener {
-            fileToSearch.setText("")
-            initRecyclerView()
+
+                if (fileToSearch.text.toString() == "") {
+
+                    Log.d("getListOfFilesFromDB:", "getListOfFilesFromDB")
+                    initRecyclerView(getListOfFilesFromDB())
+                }else if (fileToSearch.text.toString() != ""){
+
+                    Log.d("getChosenFile:", "getChosenFile")
+                    initRecyclerView(getChosenFile(fileToSearch.text.toString()))
+                }
+                fileToSearch.setText("")
         }
 
 
@@ -172,7 +178,7 @@ class SavedFilesActivity : AppCompatActivity()  {
         if (selectedFiles.isNotEmpty()) {
             for (fileData in selectedFiles) {
 
-                val fileToExport = File(fileData.filePath)
+                val fileToExport = File(fileData.path)
                 if (fileToExport.exists() && fileToExport.isFile) {
                     val sheet = workbook.createSheet(fileToExport.name + "_sheet")
                     val text = fileToExport.readText()
@@ -181,7 +187,7 @@ class SavedFilesActivity : AppCompatActivity()  {
                     for ((rowIndex, line) in rows.withIndex()) {
                         val row = sheet.createRow(rowIndex)
 
-                        val cells = line.split("\t") // Split by tab, adjust as needed
+                        val cells = line.split("\t", " ") // Split by tab, adjust as needed
 
                         for ((cellIndex, cellValue) in cells.withIndex()) {
                             val cell = row.createCell(cellIndex)
@@ -197,7 +203,7 @@ class SavedFilesActivity : AppCompatActivity()  {
                     try {
                         val fileModel = FileModel(
                             fileName = fileToExport.name.removeSuffix(".txt") + ".xlsx",
-                            path = fileToExport.path,
+                            path = fileToExport.path.removeSuffix(".txt")+".xlsx",
                             selected = false,
                             creationDate = LocalDate.now().toString()
                         )
@@ -215,10 +221,18 @@ class SavedFilesActivity : AppCompatActivity()  {
         }
     }
 
-    private fun getListOfFiles(): List<FileData> {
+    private fun getListOfFilesFromDB(): List<FileModel> {
+        return sqliteHelper.getAllFiles()
+    }
+
+    private fun getChosenFile(name: String): List<FileModel> {
+        return sqliteHelper.findFile(name)
+    }
+
+    private fun getListOfFilesFromDIR(): List<FileModel> {
 
 
-        val filesToReturn = mutableListOf<FileData>()
+        val filesToReturn = mutableListOf<FileModel>()
 
         if (externalMediaDirs.isNotEmpty()) {
             val mediaDir = externalMediaDirs[0]
@@ -228,7 +242,7 @@ class SavedFilesActivity : AppCompatActivity()  {
             if (files != null) {
                 for (file in files) {
                     if (file.isFile) {
-                        filesToReturn.add(FileData(file.name, filePath = file.path.toString()))
+                        filesToReturn.add(FileModel(fileName=file.name, path = file.path.toString(), selected = false, creationDate = ""))
                     }else {
                         Log.d("file: ","is not a file")
                     }
@@ -250,7 +264,7 @@ class SavedFilesActivity : AppCompatActivity()  {
 
             for (fileData in selectedFiles) {
 
-                val fileToDelete = File(fileData.filePath)
+                val fileToDelete = File(fileData.path)
                 val name = fileToDelete.name
                 if (fileToDelete.exists() && fileToDelete.isFile) {
                     if (fileToDelete.delete()) {
@@ -275,8 +289,6 @@ class SavedFilesActivity : AppCompatActivity()  {
     private fun initView() {
 
         recyclerView = findViewById(R.id.rvSavedFiles)
-
-
         deleteButton = findViewById(R.id.delete_button)
         exportButton = findViewById(R.id.export_button)
         menuButton = findViewById(R.id.show_menu)
@@ -284,9 +296,10 @@ class SavedFilesActivity : AppCompatActivity()  {
         fileToSearch = findViewById(R.id.search_bar)
     }
 
-    private fun initRecyclerView() {
+    private fun initRecyclerView(list: List<FileModel>) {
+        Log.d("recycler view","recycle")
         recyclerView.layoutManager = LinearLayoutManager(this)
-        filesAdapter = FilesAdapter(getListOfFiles())
+        filesAdapter = FilesAdapter(list)
         recyclerView.adapter = filesAdapter
     }
 
