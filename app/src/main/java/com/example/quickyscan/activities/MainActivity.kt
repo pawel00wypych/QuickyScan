@@ -1,4 +1,4 @@
-package com.example.quickyscan.Activities
+package com.example.quickyscan.activities
 
 import android.content.Intent
 import android.os.Bundle

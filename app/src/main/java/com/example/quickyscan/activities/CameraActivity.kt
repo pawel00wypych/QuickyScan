@@ -1,4 +1,4 @@
-package com.example.quickyscan.Activities
+package com.example.quickyscan.activities
 
 import android.Manifest
 import android.content.ContentValues
@@ -21,9 +21,11 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.example.quickyscan.FileModel
 import com.example.quickyscan.services.OCRProcessor
 import com.example.quickyscan.R
 import com.example.quickyscan.databinding.CameraLayoutBinding
+import com.example.quickyscan.services.SQLiteHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -33,6 +35,7 @@ import java.io.File
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -43,12 +46,15 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var ocrProcessor: OCRProcessor
+    private lateinit var sqliteHelper: SQLiteHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
         viewBinding = CameraLayoutBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
+        sqliteHelper = SQLiteHelper(applicationContext)
+
 
         val cancelButton: Button = findViewById(R.id.cnclButton)
         val saveButton: Button = findViewById(R.id.svButton)
@@ -162,7 +168,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
                         val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"))
                         val language = "eng"
-                        ocrProcessor = OCRProcessor(this@CameraActivity, assets, testPath, language)
+                        ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
                         showFileNameDialog(existingFileNames)
                     } else {
                         Log.e(TAG, "Saved URI is null")
@@ -242,6 +248,14 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 Toast.LENGTH_LONG
             ).show()
             Log.d(ContentValues.TAG, "Text saved to: ${outputFile.absolutePath}")
+
+            val fileModel = FileModel(
+                fileName = "$fileName.txt",
+                path = outputFile.absolutePath,
+                selected = false,
+                creationDate = LocalDate.now().toString()
+            )
+            sqliteHelper.insertFile(fileModel)
         } catch (e: IOException) {
             e.printStackTrace()
         }

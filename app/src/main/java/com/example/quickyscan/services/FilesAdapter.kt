@@ -6,10 +6,10 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.quickyscan.FileData
+import com.example.quickyscan.FileModel
 import com.example.quickyscan.R
 
-class FilesAdapter(private val fileList: List<FileData>) : RecyclerView.Adapter<FilesAdapter.FileViewHolder>() {
+class FilesAdapter(private val fileList: List<FileModel>) : RecyclerView.Adapter<FilesAdapter.FileViewHolder>() {
 
     class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val fileName: TextView = itemView.findViewById(R.id.tvFileName)
@@ -32,7 +32,7 @@ class FilesAdapter(private val fileList: List<FileData>) : RecyclerView.Adapter<
         }
     }
 
-    fun getSelectedFiles(): List<FileData> {
+    fun getSelectedFiles(): List<FileModel> {
         return fileList.filter { it.selected }
     }
 
