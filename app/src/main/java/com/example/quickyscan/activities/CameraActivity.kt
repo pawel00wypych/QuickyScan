@@ -223,7 +223,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    suspend fun saveTextToFile(fileName: String, text: String) {
+    private suspend fun saveTextToFile(fileName: String, text: String) {
         try {
             val path = externalMediaDirs.first()
             Log.d(ContentValues.TAG, "path: $path")
@@ -241,7 +241,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 outputStreamWriter.append(text)
                 outputStreamWriter.close()
             }
-            // Show a Toast to indicate that the text has been saved
             Toast.makeText(
                 this,
                 "Text saved to ${outputFile.absolutePath}",

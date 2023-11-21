@@ -6,8 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -123,11 +121,9 @@ class SavedFilesActivity : AppCompatActivity()  {
 
                 if (fileToSearch.text.toString() == "") {
 
-                    Log.d("getListOfFilesFromDB:", "getListOfFilesFromDB")
                     initRecyclerView(getListOfFilesFromDB())
                 }else if (fileToSearch.text.toString() != ""){
 
-                    Log.d("getChosenFile:", "getChosenFile")
                     initRecyclerView(getChosenFile(fileToSearch.text.toString()))
                 }
                 fileToSearch.setText("")
@@ -187,14 +183,14 @@ class SavedFilesActivity : AppCompatActivity()  {
                     for ((rowIndex, line) in rows.withIndex()) {
                         val row = sheet.createRow(rowIndex)
 
-                        val cells = line.split("\t", " ") // Split by tab, adjust as needed
+                        val cells = line.split("\t", " ")
 
                         for ((cellIndex, cellValue) in cells.withIndex()) {
                             val cell = row.createCell(cellIndex)
                             cell.setCellValue(cellValue)
                         }
                     }
-                    Log.d("fileToExport.path: ", fileToExport.path)
+
                     val outputFile = File(fileToExport.path.removeSuffix(".txt")+".xlsx")
                     FileOutputStream(outputFile).use { outputStream ->
                         workbook.write(outputStream)
@@ -297,7 +293,6 @@ class SavedFilesActivity : AppCompatActivity()  {
     }
 
     private fun initRecyclerView(list: List<FileModel>) {
-        Log.d("recycler view","recycle")
         recyclerView.layoutManager = LinearLayoutManager(this)
         filesAdapter = FilesAdapter(list)
         recyclerView.adapter = filesAdapter
