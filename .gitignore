@@ -24,7 +24,8 @@ hs_err_pid*
 replay_pid*
 
 /.idea
-/.gradel
 /opencv
 local.properties
 /opencv/build
+.gradle
+/build/
