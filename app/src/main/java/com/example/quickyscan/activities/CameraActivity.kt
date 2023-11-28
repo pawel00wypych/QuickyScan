@@ -20,6 +20,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.quickyscan.FileModel
 import com.example.quickyscan.services.OCRProcessor
@@ -47,7 +48,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var ocrProcessor: OCRProcessor
     private lateinit var sqliteHelper: SQLiteHelper
-
+    private var ocrText: String = "ocrText"
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -74,6 +75,30 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         // Set up the listeners for take photo button
         saveButton.setOnClickListener { takePhoto() }
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            2 -> {
+
+                // Jeśli żądanie zostało anulowane, tablice wyników są puste.
+                if (grantResults.isNotEmpty()
+                    && grantResults[0] === PackageManager.PERMISSION_GRANTED
+                ) {
+                    startCamera()
+                } else {
+                    // Uprawnienie zostało odrzucone. Wyłącz funkcjonalność,
+                    // która zależy od tego uprawnienia.
+                }
+                return
+            }
+        }
     }
 
     private val activityResultLauncher =
@@ -131,7 +156,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
-        val existingFileNames = getExistingFileNames()
+        //val existingFileNames = getExistingFileNames()
 
         // Create time stamped name and MediaStore entry.
         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
@@ -168,8 +193,11 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
                         val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"))
                         val language = "eng"
+
                         ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
-                        showFileNameDialog(existingFileNames)
+                        launch {
+                            ocrCall()
+                        }
                     } else {
                         Log.e(TAG, "Saved URI is null")
                     }
@@ -178,90 +206,96 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         )
     }
 
-    private fun getExistingFileNames(): List<String> {
-        // Get a list of existing file names from the directory where the extracted text files are saved
-        val directory = externalMediaDirs.first()
-        val fileList = directory.listFiles()
-        return fileList?.filter { it.isFile }?.map { it.nameWithoutExtension } ?: emptyList()
-    }
+//    private fun getExistingFileNames(): List<String> {
+//        // Get a list of existing file names from the directory where the extracted text files are saved
+//        val directory = externalMediaDirs.first()
+//        val fileList = directory.listFiles()
+//        return fileList?.filter { it.isFile }?.map { it.nameWithoutExtension } ?: emptyList()
+//    }
+//
+//    private fun showFileNameDialog(existingFileNames: List<String>) {
+//        val inputEditText = EditText(this)
+//
+//        val dialog = AlertDialog.Builder(this)
+//            .setTitle("Enter File Name")
+//            .setView(inputEditText)
+//            .setPositiveButton("Save") { _, _ ->
+//                val fileName = inputEditText.text.toString().trim()
+//                if (fileName.isNotEmpty()) {
+//                    if (existingFileNames.contains(fileName)) {
+//                        Toast.makeText(this, "File name already exists. Please provide a different name.", Toast.LENGTH_SHORT).show()
+//                    } else {
+//                        launch {
+//                            ocrCall(fileName)
+//                        }
+//                    }
+//                } else {
+//                    Toast.makeText(this, "File name cannot be empty", Toast.LENGTH_SHORT).show()
+//                }
+//            }
+//            .setNegativeButton("Cancel", null)
+//            .create()
+//
+//        dialog.show()
+//    }
 
-    private fun showFileNameDialog(existingFileNames: List<String>) {
-        val inputEditText = EditText(this)
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Enter File Name")
-            .setView(inputEditText)
-            .setPositiveButton("Save") { _, _ ->
-                val fileName = inputEditText.text.toString().trim()
-                if (fileName.isNotEmpty()) {
-                    if (existingFileNames.contains(fileName)) {
-                        Toast.makeText(this, "File name already exists. Please provide a different name.", Toast.LENGTH_SHORT).show()
-                    } else {
-                        launch {
-                            ocrCall(fileName)
-                        }
-                    }
-                } else {
-                    Toast.makeText(this, "File name cannot be empty", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .create()
-
-        dialog.show()
-    }
-
-    private suspend fun ocrCall(fileName: String) {
+    private suspend fun ocrCall() {
         Log.d("OCR", "extracting text..")
         val ret = withContext(Dispatchers.Default) {
             val ret = ocrProcessor.extractText()
+            ocrText = ret
             return@withContext ret
         }
         withContext(Dispatchers.Main) {
             Log.d("OCR", "text has been extracted.")
-            saveTextToFile(fileName, ret)
+
+           // saveTextToFile(fileName, ret)
         }
+        val intent = Intent(this, SaveFileActivity::class.java)
+        intent.putExtra("ocrText", ocrText)
+        startActivity(intent)
     }
 
-    private suspend fun saveTextToFile(fileName: String, text: String) {
-        try {
-            val path = externalMediaDirs.first()
-            Log.d(ContentValues.TAG, "path: $path")
-
-            val outputFile = File(
-                path,
-                "$fileName.txt"
-            )
-
-            withContext(Dispatchers.IO) {
-
-                outputFile.createNewFile()
-
-                val outputStreamWriter = OutputStreamWriter(outputFile.outputStream())
-                outputStreamWriter.append(text)
-                outputStreamWriter.close()
-            }
-            Toast.makeText(
-                this,
-                "Text saved to ${outputFile.absolutePath}",
-                Toast.LENGTH_LONG
-            ).show()
-            Log.d(ContentValues.TAG, "Text saved to: ${outputFile.absolutePath}")
-
-            val fileModel = FileModel(
-                fileName = "$fileName.txt",
-                path = outputFile.absolutePath,
-                selected = false,
-                creationDate = LocalDate.now().toString()
-            )
-            sqliteHelper.insertFile(fileModel)
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }
+//    private suspend fun saveTextToFile(fileName: String, text: String) {
+//        try {
+//            val path = externalMediaDirs.first()
+//            Log.d(ContentValues.TAG, "path: $path")
+//
+//            val outputFile = File(
+//                path,
+//                "$fileName.txt"
+//            )
+//
+//            withContext(Dispatchers.IO) {
+//
+//                outputFile.createNewFile()
+//
+//                val outputStreamWriter = OutputStreamWriter(outputFile.outputStream())
+//                outputStreamWriter.append(text)
+//                outputStreamWriter.close()
+//            }
+//            Toast.makeText(
+//                this,
+//                "Text saved to ${outputFile.absolutePath}",
+//                Toast.LENGTH_LONG
+//            ).show()
+//            Log.d(ContentValues.TAG, "Text saved to: ${outputFile.absolutePath}")
+//
+//            val fileModel = FileModel(
+//                fileName = "$fileName.txt",
+//                path = outputFile.absolutePath,
+//                selected = false,
+//                creationDate = LocalDate.now().toString()
+//            )
+//            sqliteHelper.insertFile(fileModel)
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//        }
+//    }
 
     private fun requestPermissions() {
-        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
+        ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 2)
+        //activityResultLauncher.launch(REQUIRED_PERMISSIONS)
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {

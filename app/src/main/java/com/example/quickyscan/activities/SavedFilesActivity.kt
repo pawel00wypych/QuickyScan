@@ -282,6 +282,8 @@ class SavedFilesActivity : AppCompatActivity()  {
         }
     }
 
+    
+
     private fun initView() {
 
         recyclerView = findViewById(R.id.rvSavedFiles)

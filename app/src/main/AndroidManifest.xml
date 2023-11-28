@@ -36,5 +36,9 @@
             android:name=".activities.SavedFilesActivity"
             android:exported="true">
         </activity>
+        <activity
+            android:name=".activities.SaveFileActivity"
+            android:exported="true">
+        </activity>
     </application>
 </manifest>
