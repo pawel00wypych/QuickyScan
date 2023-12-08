@@ -25,7 +25,8 @@ import com.example.quickyscan.services.SQLiteHelper
 import java.io.File
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.FileOutputStream
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class SavedFilesActivity : AppCompatActivity()  {
 
@@ -195,13 +196,14 @@ class SavedFilesActivity : AppCompatActivity()  {
                     FileOutputStream(outputFile).use { outputStream ->
                         workbook.write(outputStream)
                     }
-
+                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
                     try {
                         val fileModel = FileModel(
                             fileName = fileToExport.name.removeSuffix(".txt") + ".xlsx",
                             path = fileToExport.path.removeSuffix(".txt")+".xlsx",
                             selected = false,
-                            creationDate = LocalDate.now().toString()
+                            content = outputFile.readText(),
+                            creationDate = LocalDateTime.now().format(formatter).toString()
                         )
                         sqliteHelper.insertFile(fileModel)
                     }catch (e: Exception) {
@@ -223,32 +225,6 @@ class SavedFilesActivity : AppCompatActivity()  {
 
     private fun getChosenFile(name: String): List<FileModel> {
         return sqliteHelper.findFile(name)
-    }
-
-    private fun getListOfFilesFromDIR(): List<FileModel> {
-
-
-        val filesToReturn = mutableListOf<FileModel>()
-
-        if (externalMediaDirs.isNotEmpty()) {
-            val mediaDir = externalMediaDirs[0]
-
-            val files = mediaDir.listFiles()
-
-            if (files != null) {
-                for (file in files) {
-                    if (file.isFile) {
-                        filesToReturn.add(FileModel(fileName=file.name, path = file.path.toString(), selected = false, creationDate = ""))
-                    }else {
-                        Log.d("file: ","is not a file")
-                    }
-                }
-            }else {
-                Log.d("file list: ","null")
-            }
-        }
-
-        return filesToReturn
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -282,8 +258,6 @@ class SavedFilesActivity : AppCompatActivity()  {
         }
     }
 
-    
-
     private fun initView() {
 
         recyclerView = findViewById(R.id.rvSavedFiles)
@@ -296,7 +270,7 @@ class SavedFilesActivity : AppCompatActivity()  {
 
     private fun initRecyclerView(list: List<FileModel>) {
         recyclerView.layoutManager = LinearLayoutManager(this)
-        filesAdapter = FilesAdapter(list)
+        filesAdapter = FilesAdapter(list, this)
         recyclerView.adapter = filesAdapter
     }
 

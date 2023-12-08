@@ -7,6 +7,7 @@ class FileModel(
     var fileName: String,
     var selected: Boolean,
     var path: String,
+    var content: String,
     var creationDate: String
 ) {
     companion object{

@@ -19,7 +19,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.io.OutputStreamWriter
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class SaveFileActivity: AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -94,11 +95,14 @@ class SaveFileActivity: AppCompatActivity(), CoroutineScope by MainScope() {
             ).show()
             Log.d(ContentValues.TAG, "Text saved to: ${outputFile.absolutePath}")
 
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
             val fileModel = FileModel(
                 fileName = "$fileName.txt",
                 path = outputFile.absolutePath,
                 selected = false,
-                creationDate = LocalDate.now().toString()
+                content = fileContent,
+                creationDate = LocalDateTime.now().format(formatter).toString()
             )
             sqliteHelper.insertFile(fileModel)
         } catch (e: IOException) {

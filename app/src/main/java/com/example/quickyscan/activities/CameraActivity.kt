@@ -10,10 +10,8 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -22,7 +20,6 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.quickyscan.FileModel
 import com.example.quickyscan.services.OCRProcessor
 import com.example.quickyscan.R
 import com.example.quickyscan.databinding.CameraLayoutBinding
@@ -33,10 +30,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.IOException
-import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
-import java.time.LocalDate
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -65,14 +59,12 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             startActivity(intent)
         }
 
-        // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera()
         } else {
             requestPermissions()
         }
 
-        // Set up the listeners for take photo button
         saveButton.setOnClickListener { takePhoto() }
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -87,14 +79,14 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         when (requestCode) {
             2 -> {
 
-                // Jeśli żądanie zostało anulowane, tablice wyników są puste.
+                // If request has been cancelled, table of results is empty.
                 if (grantResults.isNotEmpty()
                     && grantResults[0] === PackageManager.PERMISSION_GRANTED
                 ) {
                     startCamera()
                 } else {
-                    // Uprawnienie zostało odrzucone. Wyłącz funkcjonalność,
-                    // która zależy od tego uprawnienia.
+                    // Permission has been denied. Turn off functionality,
+                    // which depends on this permission.
                 }
                 return
             }
@@ -105,7 +97,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions())
         { permissions ->
-            // Handle Permission granted/rejected
+
             var permissionGranted = true
             permissions.entries.forEach {
                 if (it.key in REQUIRED_PERMISSIONS && it.value == false)
@@ -206,39 +198,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         )
     }
 
-//    private fun getExistingFileNames(): List<String> {
-//        // Get a list of existing file names from the directory where the extracted text files are saved
-//        val directory = externalMediaDirs.first()
-//        val fileList = directory.listFiles()
-//        return fileList?.filter { it.isFile }?.map { it.nameWithoutExtension } ?: emptyList()
-//    }
-//
-//    private fun showFileNameDialog(existingFileNames: List<String>) {
-//        val inputEditText = EditText(this)
-//
-//        val dialog = AlertDialog.Builder(this)
-//            .setTitle("Enter File Name")
-//            .setView(inputEditText)
-//            .setPositiveButton("Save") { _, _ ->
-//                val fileName = inputEditText.text.toString().trim()
-//                if (fileName.isNotEmpty()) {
-//                    if (existingFileNames.contains(fileName)) {
-//                        Toast.makeText(this, "File name already exists. Please provide a different name.", Toast.LENGTH_SHORT).show()
-//                    } else {
-//                        launch {
-//                            ocrCall(fileName)
-//                        }
-//                    }
-//                } else {
-//                    Toast.makeText(this, "File name cannot be empty", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//            .setNegativeButton("Cancel", null)
-//            .create()
-//
-//        dialog.show()
-//    }
-
     private suspend fun ocrCall() {
         Log.d("OCR", "extracting text..")
         val ret = withContext(Dispatchers.Default) {
@@ -255,43 +214,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         intent.putExtra("ocrText", ocrText)
         startActivity(intent)
     }
-
-//    private suspend fun saveTextToFile(fileName: String, text: String) {
-//        try {
-//            val path = externalMediaDirs.first()
-//            Log.d(ContentValues.TAG, "path: $path")
-//
-//            val outputFile = File(
-//                path,
-//                "$fileName.txt"
-//            )
-//
-//            withContext(Dispatchers.IO) {
-//
-//                outputFile.createNewFile()
-//
-//                val outputStreamWriter = OutputStreamWriter(outputFile.outputStream())
-//                outputStreamWriter.append(text)
-//                outputStreamWriter.close()
-//            }
-//            Toast.makeText(
-//                this,
-//                "Text saved to ${outputFile.absolutePath}",
-//                Toast.LENGTH_LONG
-//            ).show()
-//            Log.d(ContentValues.TAG, "Text saved to: ${outputFile.absolutePath}")
-//
-//            val fileModel = FileModel(
-//                fileName = "$fileName.txt",
-//                path = outputFile.absolutePath,
-//                selected = false,
-//                creationDate = LocalDate.now().toString()
-//            )
-//            sqliteHelper.insertFile(fileModel)
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//        }
-//    }
 
     private fun requestPermissions() {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 2)

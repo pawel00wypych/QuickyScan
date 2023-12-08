@@ -20,6 +20,7 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
         private const val NAME = "name"
         private const val SELECTED = "selected"
         private const val PATH = "path"
+        private const val CONTENT = "content"
         private const val CREATION_DATE = "date"
     }
 
@@ -27,7 +28,7 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
         Log.d("Database creation:", "onCreate")
         val createTblFiles = ("CREATE TABLE " + TBL_FILES + "("
                 + ID + " INTEGER PRIMARY KEY," + NAME + " TEXT,"
-                + SELECTED +" BOOLEAN," + PATH + " TEXT,"
+                + SELECTED +" BOOLEAN," + PATH + " TEXT," + CONTENT +" TEXT,"
                 + CREATION_DATE + " TEXT" + ")")
 
         db.execSQL(createTblFiles)
@@ -47,6 +48,7 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
         contentValues.put(NAME, file.fileName)
         contentValues.put(SELECTED, file.selected)
         contentValues.put(PATH, file.path)
+        contentValues.put(CONTENT, file.content)
         contentValues.put(CREATION_DATE, file.creationDate)
 
         val success = db.insert(TBL_FILES, null, contentValues)
@@ -62,6 +64,8 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
 
     @SuppressLint("Range")
     fun findFile(name: String): ArrayList<FileModel>{
+        Log.d("findFile: name ",name)
+
         val selectQuery = "SELECT * FROM $TBL_FILES WHERE $NAME LIKE '%$name%'"
         return getFiles(selectQuery)
     }
@@ -86,6 +90,7 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
         var name: String
         var selected: String
         var path: String
+        var content: String
         var creationDate: String
 
         if(cursor != null && cursor.moveToFirst()){
@@ -95,6 +100,7 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
             val columnIndexName = cursor.getColumnIndex(NAME)
             val columnIndexSelected = cursor.getColumnIndex(SELECTED)
             val columnIndexPath = cursor.getColumnIndex(PATH)
+            val columnIndexContent = cursor.getColumnIndex(CONTENT)
             val columnIndexCreationDate = cursor.getColumnIndex(CREATION_DATE)
 
             do {
@@ -102,20 +108,21 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
                     columnIndexName != -1 &&
                     columnIndexSelected != -1 &&
                     columnIndexPath != -1 &&
+                    columnIndexContent != -1 &&
                     columnIndexCreationDate != -1) {
 
                     id = cursor.getInt(columnIndexId)
                     name = cursor.getString(columnIndexName)
                     selected = cursor.getString(columnIndexSelected)
                     path = cursor.getString(columnIndexPath)
+                    content = cursor.getString(columnIndexContent)
                     creationDate = cursor.getString(columnIndexCreationDate)
                     Log.d("name ",name)
 
-                    val file:  FileModel
-                    file = if(selected == "0") {
-                        FileModel(id, name, false, path, creationDate)
+                    val file:  FileModel = if(selected == "0") {
+                        FileModel(id, name, false, path, content, creationDate)
                     } else {
-                        FileModel(id, name, true, path, creationDate)
+                        FileModel(id, name, true, path, content, creationDate)
                     }
                     fileList.add(file)
                 } else {
@@ -131,6 +138,22 @@ class SQLiteHelper(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, n
         val db = this.writableDatabase
 
         val success = db.delete(TBL_FILES, "$NAME=?",arrayOf(name))
+        db.close()
+        return success
+    }
+
+    fun updateFileOnName(file: FileModel, name: String): Int {
+        val db = this.writableDatabase
+        val contentValues = ContentValues()
+
+        contentValues.put(ID, file.id)
+        contentValues.put(NAME, file.fileName)
+        contentValues.put(SELECTED, file.selected)
+        contentValues.put(PATH, file.path)
+        contentValues.put(CONTENT, file.content)
+        contentValues.put(CREATION_DATE, file.creationDate)
+
+        val success = db.update(TBL_FILES, contentValues, "$NAME=?",arrayOf(name))
         db.close()
         return success
     }
