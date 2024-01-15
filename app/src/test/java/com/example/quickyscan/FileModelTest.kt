@@ -12,9 +12,10 @@ internal class FileModelTest {
         val selected = true
         val path = "/path/to/file"
         val creationDate = "2023-11-20"
+        val content = "text"
 
         // Act
-        val fileModel = FileModel(fileName = fileName, selected = selected, path = path, creationDate = creationDate)
+        val fileModel = FileModel(fileName = fileName, selected = selected, path = path, content=content,  creationDate = creationDate)
 
         // Assert
         Assertions.assertEquals(fileName, fileModel.fileName)
@@ -26,7 +27,7 @@ internal class FileModelTest {
     @Test
     fun getId() {
         // Arrange
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         val id = fileModel.id
@@ -38,7 +39,7 @@ internal class FileModelTest {
     @Test
     fun setId() {
         // Arrange
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         fileModel.id = 42
@@ -51,7 +52,7 @@ internal class FileModelTest {
     fun getFileName() {
         // Arrange
         val fileName = "example.txt"
-        val fileModel = FileModel(fileName = fileName, selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = fileName, selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         val resultFileName = fileModel.fileName
@@ -63,7 +64,7 @@ internal class FileModelTest {
     @Test
     fun setFileName() {
         // Arrange
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         fileModel.fileName = "newFileName.txt"
@@ -75,7 +76,7 @@ internal class FileModelTest {
     @Test
     fun getSelected() {
         // Arrange
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         val selected = fileModel.selected
@@ -87,7 +88,7 @@ internal class FileModelTest {
     @Test
     fun setSelected() {
         // Arrange
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         fileModel.selected = false
@@ -100,7 +101,7 @@ internal class FileModelTest {
     fun getPath() {
         // Arrange
         val path = "/path/to/file"
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = path, creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = path, content="text",creationDate = "2023-11-20")
 
         // Act
         val resultPath = fileModel.path
@@ -112,7 +113,7 @@ internal class FileModelTest {
     @Test
     fun setPath() {
         // Arrange
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         fileModel.path = "/new/path"
@@ -125,7 +126,7 @@ internal class FileModelTest {
     fun getCreationDate() {
         // Arrange
         val creationDate = "2023-11-20"
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = creationDate)
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = creationDate)
 
         // Act
         val resultCreationDate = fileModel.creationDate
@@ -137,7 +138,7 @@ internal class FileModelTest {
     @Test
     fun setCreationDate() {
         // Arrange
-        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", creationDate = "2023-11-20")
+        val fileModel = FileModel(fileName = "example.txt", selected = true, path = "/path/to/file", content="text",creationDate = "2023-11-20")
 
         // Act
         fileModel.creationDate = "2023-11-21"

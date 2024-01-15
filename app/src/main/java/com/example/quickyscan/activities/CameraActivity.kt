@@ -2,8 +2,10 @@ package com.example.quickyscan.activities
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -11,6 +13,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
@@ -20,10 +23,11 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.quickyscan.services.OCRProcessor
 import com.example.quickyscan.R
 import com.example.quickyscan.databinding.CameraLayoutBinding
+import com.example.quickyscan.services.OCRProcessor
 import com.example.quickyscan.services.SQLiteHelper
+import com.google.android.material.internal.ContextUtils.getActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -43,6 +47,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private lateinit var ocrProcessor: OCRProcessor
     private lateinit var sqliteHelper: SQLiteHelper
     private var ocrText: String = "ocrText"
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -55,8 +60,7 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val saveButton: Button = findViewById(R.id.svButton)
 
         cancelButton.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+            finish()
         }
 
         if (allPermissionsGranted()) {
@@ -92,25 +96,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             }
         }
     }
-
-    private val activityResultLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions())
-        { permissions ->
-
-            var permissionGranted = true
-            permissions.entries.forEach {
-                if (it.key in REQUIRED_PERMISSIONS && it.value == false)
-                    permissionGranted = false
-            }
-            if (!permissionGranted) {
-                Toast.makeText(baseContext,
-                    "Permission request denied",
-                    Toast.LENGTH_SHORT).show()
-            } else {
-                startCamera()
-            }
-        }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -148,7 +133,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
-        //val existingFileNames = getExistingFileNames()
 
         // Create time stamped name and MediaStore entry.
         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
@@ -183,13 +167,14 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                         Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                         Log.d(TAG, msg)
 
-                        val testPath = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/2222-12-22-22-22-22-222.jpg"))
-                        val language = "eng"
-
+                        val testPath1 = Uri.fromFile(File("/storage/self/primary/Pictures/CameraX-Image/test4.png"))
+                        val language = "pol"
                         ocrProcessor = OCRProcessor(this@CameraActivity, assets, savedUri, language)
+
                         launch {
                             ocrCall()
                         }
+
                     } else {
                         Log.e(TAG, "Saved URI is null")
                     }
@@ -197,19 +182,19 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             }
         )
     }
-
     private suspend fun ocrCall() {
         Log.d("OCR", "extracting text..")
-        val ret = withContext(Dispatchers.Default) {
-            val ret = ocrProcessor.extractText()
-            ocrText = ret
-            return@withContext ret
-        }
-        withContext(Dispatchers.Main) {
-            Log.d("OCR", "text has been extracted.")
 
-           // saveTextToFile(fileName, ret)
-        }
+            val ret = withContext(Dispatchers.Default) {
+                val ret = ocrProcessor.extractText()
+                ocrText = ret
+                return@withContext ret
+            }
+            withContext(Dispatchers.Main) {
+                Log.d("OCR", "text has been extracted.")
+            }
+
+
         val intent = Intent(this, SaveFileActivity::class.java)
         intent.putExtra("ocrText", ocrText)
         startActivity(intent)
@@ -217,7 +202,6 @@ class CameraActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun requestPermissions() {
         ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 2)
-        //activityResultLauncher.launch(REQUIRED_PERMISSIONS)
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {

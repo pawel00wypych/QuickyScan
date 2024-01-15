@@ -56,13 +56,11 @@ class SaveFileActivity: AppCompatActivity(), CoroutineScope by MainScope() {
             } else {
                 Toast.makeText(this, "File name cannot be empty", Toast.LENGTH_SHORT).show()
             }
-            val intent = Intent(this, CameraActivity::class.java)
-            startActivity(intent)
+            finish()
         }
 
         cancelFileButton.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+            finish()
         }
     }
 
